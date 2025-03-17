@@ -36,7 +36,8 @@ func main() {
 	options := []string{"Check tasks", "Add a task", "Delete a Task"}
 	selected := 0
 	term.NewTerminal(os.Stdin, "")
-	_, err := term.MakeRaw(int(os.Stdin.Fd()))
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
 	if err != nil {
 		log.Fatal("error in making raw")
 	}
@@ -55,6 +56,7 @@ func main() {
 		}
 		userInput := string(buf)
 		if buf[0] == 3 {
+			term.Restore(int(os.Stdin.Fd()), oldState)
 			os.Exit(0)
 		}
 		if (userInput) == up {
