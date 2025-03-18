@@ -63,7 +63,19 @@ func exitCleanup(a *app) {
 
 // task functions
 func addTask(a *app, taskText string) {
-	taskId := nanoid.New()
+	var taskId string
+	i:= 0
+	for _, ok := a.tasks[taskId]; ok; {
+		newId, err := nanoid.Generate(nanoid.DefaultAlphabet, 5)
+		if err != nil {
+			log.Fatal("problem generating nanoid when adding task")
+		}
+		taskId = newId
+		i+=1
+		if i > 500 {
+			log.Fatal("Too many attempts to generate id")
+		}
+	}
 	a.tasks[taskId] = &task{id: taskId, name: taskText}
 	a.insertionOrder = append(a.insertionOrder, taskId)
 }
@@ -141,6 +153,7 @@ func main() {
 			exitCleanup(a)
 		}
 		clearLines(len(options))
+
 		if (userInput) == up {
 			selected = (selected - 1)
 			if selected == -1 {
