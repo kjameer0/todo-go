@@ -11,6 +11,25 @@ import (
 // TODO:  create struct
 // TODO:  add tasks
 // TODO:  delete task
+// TODO:  figure out how to select between different options and do something
+const up = "\033[A"
+const down = "\033[B"
+const left = "\033[D"
+const enter = 13
+
+const CHECK_TASKS = "Check tasks"
+const ADD_A_TASK = "Add a task"
+const DELETE_A_TASK = "Delete a Task"
+const QUIT = "Quit"
+
+type app struct {
+	tasks []task
+}
+
+func newApp(tasks []task) *app {
+	return &app{tasks: tasks}
+}
+
 type task struct {
 	id   int
 	name string
@@ -26,22 +45,52 @@ func clearLines(nLines int) {
 	}
 }
 
-const up = "\033[A"
-const down = "\033[B"
-const left = "\033[D"
-const enter = 13
+// task functions
+func addTask(tasks *[]task, task task) {
+	*tasks = append(*tasks, task)
+}
+func removeTask(tasks *[]task, taskId int) {
+	filteredTasks := []task{}
+	for _, task := range *tasks {
+		if task.id != taskId {
+			filteredTasks = append(filteredTasks, task)
+		}
+	}
+	*tasks = filteredTasks
+}
+func handleOption(options []string, selected int) {
+	// switch on different options
+	chosenOption := options[selected]
+	switch chosenOption {
+	case CHECK_TASKS:
+		fmt.Println("checking tasks")
+	case ADD_A_TASK:
+		fmt.Println("Adding task")
+	case DELETE_A_TASK:
+		fmt.Println("deleting task")
+	case QUIT:
+		os.Exit(0)
+	}
+
+}
 
 func main() {
+	a := newApp([]task{})
+	print(a)
 	fmt.Println("Welcome to Task Checker, what up?")
-	options := []string{"Check tasks", "Add a task", "Delete a Task"}
+
+	options := []string{"Check tasks", "Add a task", "Delete a Task", "Quit"}
 	selected := 0
+
 	term.NewTerminal(os.Stdin, "")
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 	if err != nil {
 		log.Fatal("error in making raw")
 	}
+
 	buf := make([]byte, 3)
+
 	for {
 		for idx, option := range options {
 			arrow := " "
@@ -77,7 +126,3 @@ func main() {
 		fmt.Print("\r")
 	}
 }
-
-// so how would i approach this
-//i render and wait for input
-// only accept up or down
