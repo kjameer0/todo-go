@@ -2,18 +2,16 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/aidarkhanov/nanoid"
 	"golang.org/x/term"
 )
 
-// TODO:  create struct
-// TODO:  add tasks
-// TODO:  delete task
-// TODO:  figure out how to select between different options and do something
 const up = "\033[A"
 const down = "\033[B"
 const left = "\033[D"
@@ -25,14 +23,15 @@ const DELETE_A_TASK = "Delete a Task"
 const QUIT = "Quit"
 
 type task struct {
-	id   string
-	name string
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 type app struct {
 	tasks                 map[string]*task
 	insertionOrder        []string
 	originalTerminalState *term.State
 	t                     *term.Terminal
+	saveLocation          string
 }
 
 func createTaskMap(a *app, tasks []string) map[string]*task {
@@ -49,7 +48,7 @@ func newApp() *app {
 }
 
 func newTask(id string, name string) *task {
-	t := &task{id: id, name: name}
+	t := &task{Id: id, Name: name}
 	return t
 }
 func clearLines(nLines int) {
@@ -62,6 +61,17 @@ func exitCleanup(a *app) {
 	os.Exit(0)
 }
 
+func saveToFile(a *app) {
+	taskJson, err := json.Marshal(a.tasks)
+	if err != nil {
+		log.Fatal("failed to convert tasks to JSON")
+	}
+	err = os.WriteFile(a.saveLocation, taskJson, 0644)
+	if err != nil {
+		log.Fatal("failed to write to file ", a.saveLocation)
+	}
+}
+
 // task functions
 func addTask(a *app, taskText string) {
 	var taskId string
@@ -72,8 +82,9 @@ func addTask(a *app, taskText string) {
 		}
 	}
 
-	a.tasks[taskId] = &task{id: taskId, name: taskText}
+	a.tasks[taskId] = &task{Id: taskId, Name: taskText}
 	a.insertionOrder = append(a.insertionOrder, taskId)
+	saveToFile(a)
 }
 func removeTask(a *app, taskId string) bool {
 	if _, ok := a.tasks[taskId]; !ok {
@@ -86,6 +97,7 @@ func removeTask(a *app, taskId string) bool {
 			return true
 		}
 	}
+	saveToFile(a)
 	return true
 }
 func listTasks(a *app) {
@@ -96,7 +108,7 @@ func listTasks(a *app) {
 			continue
 		}
 		curTask := a.tasks[taskId]
-		fmt.Printf("\t%s id: %s\n", curTask.name, curTask.id)
+		fmt.Printf("\t%s id: %s\n", curTask.Name, curTask.Id)
 	}
 }
 func handleOption(a *app, options []string, selected int) {
@@ -109,20 +121,20 @@ func handleOption(a *app, options []string, selected int) {
 	case CHECK_TASKS:
 		listTasks(a)
 	case ADD_A_TASK:
-		// TODO: implement adding tasks
 		r := bufio.NewReader(os.Stdin)
 		fmt.Print("Enter task: ")
 		userTask, err := r.ReadString('\n')
 		if err != nil {
 			log.Fatal("Error reading task to add")
 		}
+		userTask = strings.TrimSpace(userTask)
 		addTask(a, userTask)
 		fmt.Println(string(a.t.Escape.Green) + "Task Added" + string(a.t.Escape.Reset))
 	case DELETE_A_TASK:
 		r := bufio.NewReader(os.Stdin)
 		fmt.Print("Enter id of task to delete: ")
 		userTaskId, err := r.ReadString('\n')
-		userTaskId = userTaskId[0 : len(userTaskId)-1]
+		userTaskId = strings.TrimSpace(userTaskId)
 		if err != nil {
 			log.Fatal("Error reading task to delete")
 		}
@@ -140,6 +152,7 @@ func handleOption(a *app, options []string, selected int) {
 func main() {
 	a := newApp()
 	a.tasks = createTaskMap(a, []string{"check phone", "look at phone", "put phone down"})
+	a.saveLocation = "./tasks.json"
 	fmt.Println("Welcome to Task Checker, what up?")
 
 	options := []string{"Check tasks", "Add a task", "Delete a Task", "Quit"}
@@ -154,6 +167,7 @@ func main() {
 	a.originalTerminalState = oldState
 	a.t = t
 
+	// read three bytes at once from stdin to capture arrow key presses
 	buf := make([]byte, 3)
 
 	for {
