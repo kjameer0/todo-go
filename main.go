@@ -27,11 +27,15 @@ type task struct {
 	Name string `json:"name"`
 }
 type app struct {
-	tasks                 map[string]*task
-	insertionOrder        []string
+	Tasks                 map[string]*task `json:"tasks"`
+	InsertionOrder        []string         `json:"insertionOrder"`
 	originalTerminalState *term.State
 	t                     *term.Terminal
 	saveLocation          string
+}
+type saveData struct {
+	Tasks          map[string]*task `json:"tasks"`
+	InsertionOrder []string         `json:"insertionOrder"`
 }
 
 func createTaskMap(a *app, tasks []string) map[string]*task {
@@ -39,7 +43,7 @@ func createTaskMap(a *app, tasks []string) map[string]*task {
 	for _, taskText := range tasks {
 		nano, _ := nanoid.Generate(nanoid.DefaultAlphabet, 5)
 		taskMap[nano] = newTask(nano, taskText)
-		a.insertionOrder = append(a.insertionOrder, nano)
+		a.InsertionOrder = append(a.InsertionOrder, nano)
 	}
 	return taskMap
 }
@@ -62,7 +66,10 @@ func exitCleanup(a *app) {
 }
 
 func saveToFile(a *app) {
-	taskJson, err := json.Marshal(a.tasks)
+	s := saveData{}
+	s.Tasks = a.Tasks
+	s.InsertionOrder = a.InsertionOrder
+	taskJson, err := json.Marshal(s)
 	if err != nil {
 		log.Fatal("failed to convert tasks to JSON")
 	}
@@ -71,30 +78,40 @@ func saveToFile(a *app) {
 		log.Fatal("failed to write to file ", a.saveLocation)
 	}
 }
+func readTasksFromFile(a *app) {
+	data, err := os.ReadFile(a.saveLocation)
+	s := saveData{}
+	if err != nil {
+		log.Fatal("failed to read from save location", err)
+	}
+	json.Unmarshal(data, &s)
+	a.InsertionOrder = s.InsertionOrder
+	a.Tasks = s.Tasks
+}
 
 // task functions
 func addTask(a *app, taskText string) {
 	var taskId string
 	taskId, err := nanoid.Generate(nanoid.DefaultAlphabet, 5)
-	if _, ok := a.tasks[taskId]; ok {
+	if _, ok := a.Tasks[taskId]; ok {
 		if err != nil {
 			log.Fatal("problem generating nanoid when adding task")
 		}
 	}
 
-	a.tasks[taskId] = &task{Id: taskId, Name: taskText}
-	a.insertionOrder = append(a.insertionOrder, taskId)
+	a.Tasks[taskId] = &task{Id: taskId, Name: taskText}
+	a.InsertionOrder = append(a.InsertionOrder, taskId)
 	saveToFile(a)
 }
 func removeTask(a *app, taskId string) bool {
-	if _, ok := a.tasks[taskId]; !ok {
+	if _, ok := a.Tasks[taskId]; !ok {
 		return false
 	}
-	delete(a.tasks, taskId)
-	for idx, id := range a.insertionOrder {
+	delete(a.Tasks, taskId)
+	for idx, id := range a.InsertionOrder {
 		if id == taskId {
-			a.insertionOrder[idx] = ""
-			return true
+			a.InsertionOrder[idx] = ""
+			break
 		}
 	}
 	saveToFile(a)
@@ -103,11 +120,11 @@ func removeTask(a *app, taskId string) bool {
 func listTasks(a *app) {
 	fmt.Println("Tasks:")
 
-	for _, taskId := range a.insertionOrder {
+	for _, taskId := range a.InsertionOrder {
 		if taskId == "" {
 			continue
 		}
-		curTask := a.tasks[taskId]
+		curTask := a.Tasks[taskId]
 		fmt.Printf("\t%s id: %s\n", curTask.Name, curTask.Id)
 	}
 }
@@ -151,8 +168,10 @@ func handleOption(a *app, options []string, selected int) {
 
 func main() {
 	a := newApp()
-	a.tasks = createTaskMap(a, []string{"check phone", "look at phone", "put phone down"})
+	// TODO: read from file and process JSON
+	// a.Tasks = createTaskMap(a, []string{"check phone", "look at phone", "put phone down"})
 	a.saveLocation = "./tasks.json"
+	readTasksFromFile(a)
 	fmt.Println("Welcome to Task Checker, what up?")
 
 	options := []string{"Check tasks", "Add a task", "Delete a Task", "Quit"}
