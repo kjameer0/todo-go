@@ -23,8 +23,9 @@ const DELETE_A_TASK = "Delete a Task"
 const QUIT = "Quit"
 
 type task struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Completed bool   `json:"completed"`
 }
 type app struct {
 	Tasks                 map[string]*task `json:"tasks"`
@@ -42,17 +43,18 @@ func createTaskMap(a *app, tasks []string) map[string]*task {
 	taskMap := make(map[string]*task)
 	for _, taskText := range tasks {
 		nano, _ := nanoid.Generate(nanoid.DefaultAlphabet, 5)
-		taskMap[nano] = newTask(nano, taskText)
+		taskMap[nano] = newTask(nano, taskText, false)
 		a.InsertionOrder = append(a.InsertionOrder, nano)
 	}
 	return taskMap
 }
 func newApp() *app {
-	return &app{}
+	tasks := make(map[string]*task, 100)
+	return &app{Tasks: tasks}
 }
 
-func newTask(id string, name string) *task {
-	t := &task{Id: id, Name: name}
+func newTask(id string, name string, completed bool) *task {
+	t := &task{Id: id, Name: name, Completed: completed}
 	return t
 }
 func clearLines(nLines int) {
@@ -86,7 +88,9 @@ func readTasksFromFile(a *app) {
 	}
 	json.Unmarshal(data, &s)
 	a.InsertionOrder = s.InsertionOrder
-	a.Tasks = s.Tasks
+	if len(s.Tasks) > 0 {
+		a.Tasks = s.Tasks
+	}
 }
 
 // task functions
@@ -98,7 +102,6 @@ func addTask(a *app, taskText string) {
 			log.Fatal("problem generating nanoid when adding task")
 		}
 	}
-
 	a.Tasks[taskId] = &task{Id: taskId, Name: taskText}
 	a.InsertionOrder = append(a.InsertionOrder, taskId)
 	saveToFile(a)
@@ -125,7 +128,13 @@ func listTasks(a *app) {
 			continue
 		}
 		curTask := a.Tasks[taskId]
-		fmt.Printf("\t%s id: %s\n", curTask.Name, curTask.Id)
+		var completed string
+		if !curTask.Completed {
+			completed = "❌"
+		} else {
+			completed = "✅"
+		}
+		fmt.Printf("\t%s %s id: %s\n", curTask.Name, completed, curTask.Id)
 	}
 }
 func handleOption(a *app, options []string, selected int) {
