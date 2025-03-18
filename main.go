@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -64,32 +65,32 @@ func exitCleanup(a *app) {
 // task functions
 func addTask(a *app, taskText string) {
 	var taskId string
-	i:= 0
-	for _, ok := a.tasks[taskId]; ok; {
-		newId, err := nanoid.Generate(nanoid.DefaultAlphabet, 5)
+	taskId, err := nanoid.Generate(nanoid.DefaultAlphabet, 5)
+	if _, ok := a.tasks[taskId]; ok {
 		if err != nil {
 			log.Fatal("problem generating nanoid when adding task")
 		}
-		taskId = newId
-		i+=1
-		if i > 500 {
-			log.Fatal("Too many attempts to generate id")
-		}
 	}
+
 	a.tasks[taskId] = &task{id: taskId, name: taskText}
 	a.insertionOrder = append(a.insertionOrder, taskId)
 }
-func removeTask(a *app, taskId string) {
+func removeTask(a *app, taskId string) bool {
+	if _, ok := a.tasks[taskId]; !ok {
+		return false
+	}
 	delete(a.tasks, taskId)
 	for idx, id := range a.insertionOrder {
 		if id == taskId {
 			a.insertionOrder[idx] = ""
-			return
+			return true
 		}
 	}
+	return true
 }
 func listTasks(a *app) {
 	fmt.Println("Tasks:")
+
 	for _, taskId := range a.insertionOrder {
 		if taskId == "" {
 			continue
@@ -108,10 +109,29 @@ func handleOption(a *app, options []string, selected int) {
 	case CHECK_TASKS:
 		listTasks(a)
 	case ADD_A_TASK:
-		fmt.Println("Adding task")
+		// TODO: implement adding tasks
+		r := bufio.NewReader(os.Stdin)
+		fmt.Print("Enter task: ")
+		userTask, err := r.ReadString('\n')
+		if err != nil {
+			log.Fatal("Error reading task to add")
+		}
+		addTask(a, userTask)
+		fmt.Println(string(a.t.Escape.Green) + "Task Added" + string(a.t.Escape.Reset))
 	case DELETE_A_TASK:
-		// TODO: come up with interface for deleting
-		fmt.Println("deleting task")
+		r := bufio.NewReader(os.Stdin)
+		fmt.Print("Enter id of task to delete: ")
+		userTaskId, err := r.ReadString('\n')
+		userTaskId = userTaskId[0 : len(userTaskId)-1]
+		if err != nil {
+			log.Fatal("Error reading task to delete")
+		}
+		wasRemoved := removeTask(a, userTaskId)
+		if wasRemoved {
+			fmt.Println(string(a.t.Escape.Green) + "Task Deleted" + string(a.t.Escape.Reset))
+		} else {
+			fmt.Println(string(a.t.Escape.Yellow) + "No task matching the provided id" + string(a.t.Escape.Reset))
+		}
 	case QUIT:
 		exitCleanup(a)
 	}

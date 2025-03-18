@@ -1,18 +1,10 @@
 package main
 
-import (
-	"fmt"
-	"os"
-
-	"golang.org/x/term"
-)
+import "fmt"
 
 func main() {
 	// disable input buffering
-	term.MakeRaw(int(os.Stdin.Fd()))
-	var b []byte = make([]byte, 3)
-	for {
-		os.Stdin.Read(b)
-		fmt.Println(b)
-	}
+	var s string
+	fmt.Scanln(&s)
+	fmt.Println(s, "string")
 }
