@@ -12,12 +12,15 @@ import (
 	"golang.org/x/term"
 )
 
+// TODO: do not allow empty tasks to be added
+
 const up = "\033[A"
 const down = "\033[B"
 const left = "\033[D"
 const enter = 13
 
 const CHECK_TASKS = "Check tasks"
+const UPDATE_TASK = "Update tasks"
 const ADD_A_TASK = "Add a task"
 const DELETE_A_TASK = "Delete a Task"
 const QUIT = "Quit"
@@ -80,6 +83,7 @@ func saveToFile(a *app) {
 		log.Fatal("failed to write to file ", a.saveLocation)
 	}
 }
+
 func readTasksFromFile(a *app) {
 	data, err := os.ReadFile(a.saveLocation)
 	s := saveData{}
@@ -102,7 +106,7 @@ func addTask(a *app, taskText string) {
 			log.Fatal("problem generating nanoid when adding task")
 		}
 	}
-	a.Tasks[taskId] = &task{Id: taskId, Name: taskText}
+	a.Tasks[taskId] = newTask(taskId, taskText, false)
 	a.InsertionOrder = append(a.InsertionOrder, taskId)
 	saveToFile(a)
 }
@@ -146,6 +150,10 @@ func handleOption(a *app, options []string, selected int) {
 	switch chosenOption {
 	case CHECK_TASKS:
 		listTasks(a)
+	case UPDATE_TASK:
+		// TODO: figure out update logic
+		// i want to let someone toggle deletion status
+		fmt.Println("Update task")
 	case ADD_A_TASK:
 		r := bufio.NewReader(os.Stdin)
 		fmt.Print("Enter task: ")
@@ -177,13 +185,11 @@ func handleOption(a *app, options []string, selected int) {
 
 func main() {
 	a := newApp()
-	// TODO: read from file and process JSON
-	// a.Tasks = createTaskMap(a, []string{"check phone", "look at phone", "put phone down"})
 	a.saveLocation = "./tasks.json"
 	readTasksFromFile(a)
 	fmt.Println("Welcome to Task Checker, what up?")
 
-	options := []string{"Check tasks", "Add a task", "Delete a Task", "Quit"}
+	options := []string{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, QUIT}
 	selected := 0
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
