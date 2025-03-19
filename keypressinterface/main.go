@@ -3,6 +3,9 @@ package keypressinterface
 import (
 	"errors"
 	"fmt"
+	"os"
+
+	"golang.org/x/term"
 )
 
 // okay I can render a list of items broken up by line
@@ -15,12 +18,19 @@ import (
 // number of cols
 // number of rows
 type MatrixMenu struct {
-	matrixData [][]string
-	Items      []string
-	Rows       int
-	Cols       int
-	fd         int
+	matrixData    [][]string
+	Items         []string
+	Rows          int
+	Cols          int
+	fd            int
+	cursorPos     [2]int
+	originalState *term.State
 }
+
+const up = "\033[A"
+const down = "\033[B"
+const right = "\033[C"
+const left = "\033[D"
 
 // func (m *MatrixMenu) generateMatrix(n int) [][]int {
 
@@ -52,20 +62,46 @@ func NewMatrixMenu(items []string, rows int, cols int, fd int) (*MatrixMenu, err
 	if err != nil {
 		return nil, err
 	}
-	return &MatrixMenu{Rows: rows, Cols: cols, matrixData: matrix, fd: fd}, nil
+	return &MatrixMenu{Rows: rows, Cols: cols, matrixData: matrix, fd: fd, cursorPos: [2]int{0, 0}}, nil
 }
+// func (m *MatrixMenu) handleControls() error {
+// 	row := m.cursorPos[0]
+// 	col := m.cursorPos[1]
+// 	return nil
+// }
+
 func (m *MatrixMenu) RenderInterface() error {
 	if m.matrixData == nil {
 		return errors.New("no data to create menu from")
 	}
-
-	for _, row := range m.matrixData {
-		rowText := ""
-		for _, val := range row {
-			rowText += "  "
-			rowText += val
+	oldState, err := term.MakeRaw(m.fd)
+	if err != nil {
+		return err
+	}
+	m.originalState = oldState
+	for {
+		for rowIdx, row := range m.matrixData {
+			rowText := ""
+			for colIdx, val := range row {
+				if rowIdx == m.cursorPos[0] && colIdx == m.cursorPos[1] {
+					rowText += " >"
+				} else {
+					rowText += "  "
+				}
+				rowText += val
+			}
+			buf := make([]byte, 3)
+			_, err := os.Stdin.Read(buf)
+			if err != nil {
+				return err
+			}
+			userInput := string(buf)
+			if buf[0] == 3 {
+				term.Restore(m.fd, m.originalState)
+				return errors.New("interrupt triggered")
+			}
+			fmt.Println(rowText)
 		}
-		fmt.Println(rowText)
 	}
 	return nil
 }
