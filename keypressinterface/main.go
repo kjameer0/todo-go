@@ -31,10 +31,43 @@ const up = "\033[A"
 const down = "\033[B"
 const right = "\033[C"
 const left = "\033[D"
+const TERMINAL_WINDOW_WIDTH = 80
 
+// write a function that takes a string slice as input and creates a slice of slices and
+func generateRows(items []string, windowWidth int) [][]string {
+	curWidth := 0
+	m := [][]string{}
+	curRow := []string{}
+	for _, item := range items {
+		if len(item) >= windowWidth-5 {
+			truncatedRow := []string{(item[0:windowWidth-5] + "...")}
+			if len(curRow) > 0 {
+				m = append(m, curRow)
+				curRow = []string{}
+			}
+			m = append(m, truncatedRow)
+		} else if len(item)+curWidth >= windowWidth-5 {
+			curWidth = 0
+			m = append(m, curRow)
+			curRow = []string{item}
+		} else if len(item)+curWidth < windowWidth {
+			curWidth += len(item)
+			curRow = append(curRow, item)
+		}
+	}
+	if len(curRow) > 0 {
+		m = append(m, curRow)
+	}
+	return m
+}
+
+// TODO write a function to generate lines of 80 char width
+// a task can be length l < 80 or l >= 80
+//write a function that
 // func (m *MatrixMenu) generateMatrix(n int) [][]int {
 
 // }
+
 func generateMatrix(cols int, items []string) ([][]string, error) {
 	matrix := make([][]string, 0)
 	itemIdx := 0
@@ -56,10 +89,7 @@ func generateMatrix(cols int, items []string) ([][]string, error) {
 	return matrix, nil
 }
 func NewMatrixMenu(items []string, cols int, fd int) (*MatrixMenu, error) {
-	matrix, err := generateMatrix(cols, items)
-	if err != nil {
-		return nil, err
-	}
+	matrix := generateRows(items, TERMINAL_WINDOW_WIDTH)
 	return &MatrixMenu{Cols: cols, matrixData: matrix, fd: fd, cursorPos: [2]int{0, 0}}, nil
 }
 
@@ -83,7 +113,7 @@ func (m *MatrixMenu) RenderInterface() error {
 	}
 	defer term.Restore(m.fd, oldState)
 	m.originalState = oldState
-	
+
 	for {
 		for rowIdx, row := range m.matrixData {
 			rowText := ""
@@ -120,23 +150,18 @@ func (m *MatrixMenu) RenderInterface() error {
 		} else if userInput == down {
 			nextCursorPos := m.cursorPos[0]
 			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData)
+			if m.cursorPos[1] >= len(m.matrixData[nextCursorPos]) {
+				m.cursorPos[1] = len(m.matrixData[nextCursorPos]) - 1
+			}
 			m.cursorPos[0] = nextCursorPos
 		} else if userInput == right {
 			nextCursorPos := m.cursorPos[1]
-			nextCursorPos = (nextCursorPos + 1) % m.Cols
-			// skip to front of row if we see a blank
-			if m.matrixData[m.cursorPos[0]][nextCursorPos] == "" {
-				m.cursorPos[1] = 0
-			} else {
-				m.cursorPos[1] = nextCursorPos
-			}
+			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData[m.cursorPos[0]])
+			m.cursorPos[1] = nextCursorPos
 		} else if userInput == left {
 			nextCursorPos := m.cursorPos[1] - 1
 			if nextCursorPos < 0 {
-				nextCursorPos = len(m.matrixData[0]) - 1
-				for m.matrixData[m.cursorPos[0]][nextCursorPos] == "" {
-					nextCursorPos--
-				}
+				nextCursorPos = len(m.matrixData[m.cursorPos[0]]) - 1
 			}
 			m.cursorPos[1] = nextCursorPos
 		}
