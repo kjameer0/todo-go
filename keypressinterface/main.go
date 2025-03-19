@@ -35,13 +35,10 @@ const left = "\033[D"
 // func (m *MatrixMenu) generateMatrix(n int) [][]int {
 
 // }
-func generateMatrix(rows int, cols int, items []string) ([][]string, error) {
+func generateMatrix(cols int, items []string) ([][]string, error) {
 	matrix := make([][]string, 0)
-	if len(items) > rows*cols {
-		return nil, errors.New("too many items for provided rows and columns")
-	}
 	itemIdx := 0
-	for row := 0; row < rows; row++ {
+	for itemIdx < len(items) {
 		if itemIdx == len(items) {
 			return matrix, nil
 		}
@@ -49,27 +46,33 @@ func generateMatrix(rows int, cols int, items []string) ([][]string, error) {
 		matrix = append(matrix, itemList)
 		for col := 0; col < cols; col++ {
 			if itemIdx == len(items) {
-				return matrix, nil
+				itemList[col] = ""
+				continue
 			}
-			matrix[row][col] = items[itemIdx]
+			itemList[col] = items[itemIdx]
 			itemIdx++
 		}
 	}
 	return matrix, nil
 }
-func NewMatrixMenu(items []string, rows int, cols int, fd int) (*MatrixMenu, error) {
-	matrix, err := generateMatrix(rows, cols, items)
+func NewMatrixMenu(items []string, cols int, fd int) (*MatrixMenu, error) {
+	matrix, err := generateMatrix(cols, items)
 	if err != nil {
 		return nil, err
 	}
-	return &MatrixMenu{Rows: rows, Cols: cols, matrixData: matrix, fd: fd, cursorPos: [2]int{0, 0}}, nil
+	return &MatrixMenu{Cols: cols, matrixData: matrix, fd: fd, cursorPos: [2]int{0, 0}}, nil
 }
-// func (m *MatrixMenu) handleControls() error {
-// 	row := m.cursorPos[0]
-// 	col := m.cursorPos[1]
-// 	return nil
-// }
 
+//	func (m *MatrixMenu) handleControls() error {
+//		row := m.cursorPos[0]
+//		col := m.cursorPos[1]
+//		return nil
+//	}
+func clearLines(nLines int) {
+	for i := 0; i < nLines; i++ {
+		fmt.Print("\033[F\033[K") // Move cursor up and clear line
+	}
+}
 func (m *MatrixMenu) RenderInterface() error {
 	if m.matrixData == nil {
 		return errors.New("no data to create menu from")
@@ -78,7 +81,9 @@ func (m *MatrixMenu) RenderInterface() error {
 	if err != nil {
 		return err
 	}
+	defer term.Restore(m.fd, oldState)
 	m.originalState = oldState
+	
 	for {
 		for rowIdx, row := range m.matrixData {
 			rowText := ""
@@ -90,18 +95,52 @@ func (m *MatrixMenu) RenderInterface() error {
 				}
 				rowText += val
 			}
-			buf := make([]byte, 3)
-			_, err := os.Stdin.Read(buf)
-			if err != nil {
-				return err
-			}
-			userInput := string(buf)
-			if buf[0] == 3 {
-				term.Restore(m.fd, m.originalState)
-				return errors.New("interrupt triggered")
-			}
 			fmt.Println(rowText)
+			fmt.Print("\r")
 		}
+		fmt.Print("\r")
+
+		buf := make([]byte, 3)
+		_, err := os.Stdin.Read(buf)
+		if err != nil {
+			return err
+		}
+		userInput := string(buf)
+		if buf[0] == 3 {
+			term.Restore(m.fd, m.originalState)
+			return errors.New("interrupt triggered")
+		}
+		clearLines(len(m.matrixData))
+		if userInput == up {
+			nextCursorPos := m.cursorPos[0] - 1
+			if nextCursorPos < 0 {
+				nextCursorPos = len(m.matrixData) - 1
+			}
+			m.cursorPos[0] = nextCursorPos
+		} else if userInput == down {
+			nextCursorPos := m.cursorPos[0]
+			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData)
+			m.cursorPos[0] = nextCursorPos
+		} else if userInput == right {
+			nextCursorPos := m.cursorPos[1]
+			nextCursorPos = (nextCursorPos + 1) % m.Cols
+			// skip to front of row if we see a blank
+			if m.matrixData[m.cursorPos[0]][nextCursorPos] == "" {
+				m.cursorPos[1] = 0
+			} else {
+				m.cursorPos[1] = nextCursorPos
+			}
+		} else if userInput == left {
+			nextCursorPos := m.cursorPos[1] - 1
+			if nextCursorPos < 0 {
+				nextCursorPos = len(m.matrixData[0]) - 1
+				for m.matrixData[m.cursorPos[0]][nextCursorPos] == "" {
+					nextCursorPos--
+				}
+			}
+			m.cursorPos[1] = nextCursorPos
+		}
+		fmt.Print("\r")
 	}
 	return nil
 }
