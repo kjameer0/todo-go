@@ -8,23 +8,19 @@ import (
 	"golang.org/x/term"
 )
 
-// okay I can render a list of items broken up by line
-// what is the next part?
-// I need to be able to generate unique ids for each rendered task that are two characters in length
+// i need the ability to have pressing enter on an entry return the underlying data(not the string version) to the user
+type StringerSignaler[T any] interface {
+	String() string
+	Signal() T
+}
 
-// a menu that can be navigated by moving cursor around when you press keys
-// generating a menu should entail submitting
-// a list of strings
-// number of cols
-// number of rows
-type MatrixMenu struct {
-	matrixData    [][]string
-	Items         []string
-	Rows          int
-	Cols          int
-	fd            int
-	cursorPos     [2]int
-	originalState *term.State
+type MatrixMenu[T fmt.Stringer] struct {
+	matrixData           [][]string
+	underlyingDataMatrix [][]T
+	Items                []T
+	fd                   int
+	cursorPos            [2]int
+	originalState        *term.State
 }
 
 const up = "\033[A"
@@ -32,8 +28,8 @@ const down = "\033[B"
 const right = "\033[C"
 const left = "\033[D"
 const TERMINAL_WINDOW_WIDTH = 80
+const enter = 13
 
-// write a function that takes a string slice as input and creates a slice of slices and
 func generateRows(items []string, windowWidth int) [][]string {
 	curWidth := 0
 	m := [][]string{}
@@ -88,28 +84,41 @@ func generateMatrix(cols int, items []string) ([][]string, error) {
 	}
 	return matrix, nil
 }
-func NewMatrixMenu(items []string, cols int, fd int) (*MatrixMenu, error) {
-	matrix := generateRows(items, TERMINAL_WINDOW_WIDTH)
-	return &MatrixMenu{Cols: cols, matrixData: matrix, fd: fd, cursorPos: [2]int{0, 0}}, nil
+func NewMatrixMenu[T fmt.Stringer](items []T, fd int) (*MatrixMenu[T], error) {
+	stringItems := []string{}
+	for _, item := range items {
+		stringItems = append(stringItems, item.String())
+	}
+
+	matrix := generateRows(stringItems, TERMINAL_WINDOW_WIDTH)
+	//make the data matrix match the string matrix
+	underlyingDataMatrix := [][]T{}
+	itemsIdx := 0
+	for _, row := range matrix {
+		// iterate cols
+		curRow := []T{}
+		for i := 0; i < len(row); i++ {
+			curRow = append(curRow, items[itemsIdx])
+			itemsIdx++
+		}
+		underlyingDataMatrix = append(underlyingDataMatrix, curRow)
+	}
+	return &MatrixMenu[T]{matrixData: matrix, underlyingDataMatrix: underlyingDataMatrix, fd: fd, cursorPos: [2]int{0, 0}}, nil
 }
 
-//	func (m *MatrixMenu) handleControls() error {
-//		row := m.cursorPos[0]
-//		col := m.cursorPos[1]
-//		return nil
-//	}
 func clearLines(nLines int) {
 	for i := 0; i < nLines; i++ {
 		fmt.Print("\033[F\033[K") // Move cursor up and clear line
 	}
 }
-func (m *MatrixMenu) RenderInterface() error {
+func (m *MatrixMenu[T]) RenderInterface() (T, error) {
+	var zeroValue T
 	if m.matrixData == nil {
-		return errors.New("no data to create menu from")
+		return zeroValue, errors.New("no data to create menu from")
 	}
 	oldState, err := term.MakeRaw(m.fd)
 	if err != nil {
-		return err
+		return zeroValue, err
 	}
 	defer term.Restore(m.fd, oldState)
 	m.originalState = oldState
@@ -133,41 +142,44 @@ func (m *MatrixMenu) RenderInterface() error {
 		buf := make([]byte, 3)
 		_, err := os.Stdin.Read(buf)
 		if err != nil {
-			return err
+			return zeroValue, err
 		}
+		curMatrixRow := m.cursorPos[0]
+		curMatrixCol := m.cursorPos[1]
 		userInput := string(buf)
 		if buf[0] == 3 {
 			term.Restore(m.fd, m.originalState)
-			return errors.New("interrupt triggered")
+			return zeroValue, errors.New("interrupt triggered")
 		}
 		clearLines(len(m.matrixData))
 		if userInput == up {
-			nextCursorPos := m.cursorPos[0] - 1
+			nextCursorPos := curMatrixRow - 1
 			if nextCursorPos < 0 {
 				nextCursorPos = len(m.matrixData) - 1
 			}
 			m.cursorPos[0] = nextCursorPos
 		} else if userInput == down {
-			nextCursorPos := m.cursorPos[0]
+			nextCursorPos := curMatrixRow
 			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData)
-			if m.cursorPos[1] >= len(m.matrixData[nextCursorPos]) {
+			if curMatrixCol >= len(m.matrixData[nextCursorPos]) {
 				m.cursorPos[1] = len(m.matrixData[nextCursorPos]) - 1
 			}
 			m.cursorPos[0] = nextCursorPos
 		} else if userInput == right {
-			nextCursorPos := m.cursorPos[1]
-			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData[m.cursorPos[0]])
+			nextCursorPos := curMatrixCol
+			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData[curMatrixRow])
 			m.cursorPos[1] = nextCursorPos
 		} else if userInput == left {
-			nextCursorPos := m.cursorPos[1] - 1
+			nextCursorPos := curMatrixCol - 1
 			if nextCursorPos < 0 {
-				nextCursorPos = len(m.matrixData[m.cursorPos[0]]) - 1
+				nextCursorPos = len(m.matrixData[curMatrixRow]) - 1
 			}
 			m.cursorPos[1] = nextCursorPos
+		} else if buf[0] == enter {
+			return m.underlyingDataMatrix[curMatrixRow][curMatrixCol], nil
 		}
 		fmt.Print("\r")
 	}
-	return nil
 }
 
 func RenderInterface() {

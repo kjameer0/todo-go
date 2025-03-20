@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	ki "todo.com/keypressinterface"
+
 	"github.com/aidarkhanov/nanoid"
 	"golang.org/x/term"
 )
@@ -30,6 +32,17 @@ type task struct {
 	Name      string `json:"name"`
 	Completed bool   `json:"completed"`
 }
+
+func (t *task) String() string {
+	var completed string
+	if !t.Completed {
+		completed = "❌"
+	} else {
+		completed = "✅"
+	}
+	return fmt.Sprintf("%s %s", t.Name, completed)
+}
+
 type app struct {
 	Tasks                 map[string]*task `json:"tasks"`
 	InsertionOrder        []string         `json:"insertionOrder"`
@@ -42,22 +55,18 @@ type saveData struct {
 	InsertionOrder []string         `json:"insertionOrder"`
 }
 
-func createTaskMap(a *app, tasks []string) map[string]*task {
-	taskMap := make(map[string]*task)
-	for _, taskText := range tasks {
-		nano, _ := nanoid.Generate(nanoid.DefaultAlphabet, 5)
-		taskMap[nano] = newTask(nano, taskText, false)
-		a.InsertionOrder = append(a.InsertionOrder, nano)
-	}
-	return taskMap
-}
 func newApp() *app {
 	tasks := make(map[string]*task, 100)
 	return &app{Tasks: tasks}
 }
 
-func newTask(id string, name string, completed bool) *task {
-	t := &task{Id: id, Name: name, Completed: completed}
+func newTask(name string, completed bool) *task {
+	var taskId string
+	taskId, err := nanoid.Generate(nanoid.DefaultAlphabet, 20)
+	if err != nil {
+		log.Fatal(err)
+	}
+	t := &task{Id: taskId, Name: name, Completed: completed}
 	return t
 }
 func clearLines(nLines int) {
@@ -99,15 +108,9 @@ func readTasksFromFile(a *app) {
 
 // task functions
 func addTask(a *app, taskText string) {
-	var taskId string
-	taskId, err := nanoid.Generate(nanoid.DefaultAlphabet, 5)
-	if _, ok := a.Tasks[taskId]; ok {
-		if err != nil {
-			log.Fatal("problem generating nanoid when adding task")
-		}
-	}
-	a.Tasks[taskId] = newTask(taskId, taskText, false)
-	a.InsertionOrder = append(a.InsertionOrder, taskId)
+	addedTask := newTask(taskText, false)
+	a.Tasks[addedTask.Id] = addedTask
+	a.InsertionOrder = append(a.InsertionOrder, addedTask.Id)
 	saveToFile(a)
 }
 func removeTask(a *app, taskId string) bool {
@@ -141,6 +144,10 @@ func listTasks(a *app) {
 		fmt.Printf("\t%s %s id: %s\n", curTask.Name, completed, curTask.Id)
 	}
 }
+func updateTask(a *app, t *task) {
+	t.Completed = !t.Completed
+	saveToFile(a)
+}
 func handleOption(a *app, options []string, selected int) {
 	// switch on different options
 	chosenOption := options[selected]
@@ -152,8 +159,25 @@ func handleOption(a *app, options []string, selected int) {
 		listTasks(a)
 	case UPDATE_TASK:
 		// TODO: figure out update logic
-		// i want to let someone toggle deletion status
-		fmt.Println("Update task")
+		items := []*task{}
+		fmt.Println(a.InsertionOrder)
+		for _, item := range a.InsertionOrder {
+			taskItem := a.Tasks[item]
+			items = append(items, taskItem)
+		}
+		m, err := ki.NewMatrixMenu(items, int(os.Stdin.Fd()))
+		if err != nil {
+			log.Fatal("failed to generate menu")
+		}
+		selection, err := m.RenderInterface()
+		if err != nil {
+			log.Fatal("menu failed in update task")
+		}
+		updateTask(a, selection)
+		if err != nil {
+			log.Fatal("failed to render menu for updating tasks")
+		}
+		fmt.Println(string(a.t.Escape.Green) + "Task Updated" + string(a.t.Escape.Reset))
 	case ADD_A_TASK:
 		r := bufio.NewReader(os.Stdin)
 		fmt.Print("Enter task: ")
@@ -165,14 +189,20 @@ func handleOption(a *app, options []string, selected int) {
 		addTask(a, userTask)
 		fmt.Println(string(a.t.Escape.Green) + "Task Added" + string(a.t.Escape.Reset))
 	case DELETE_A_TASK:
-		r := bufio.NewReader(os.Stdin)
-		fmt.Print("Enter id of task to delete: ")
-		userTaskId, err := r.ReadString('\n')
-		userTaskId = strings.TrimSpace(userTaskId)
-		if err != nil {
-			log.Fatal("Error reading task to delete")
+		items := []*task{}
+		for _, item := range a.Tasks {
+			items = append(items, item)
 		}
-		wasRemoved := removeTask(a, userTaskId)
+		fmt.Print("Choose task to delete: \n")
+		menu, err := ki.NewMatrixMenu(items, int(os.Stdin.Fd()))
+		if err != nil {
+			log.Fatal("failed to create delete menu")
+		}
+		selection, err := menu.RenderInterface()
+		if err != nil {
+			log.Fatal("failed to delete")
+		}
+		wasRemoved := removeTask(a, selection.Id)
 		if wasRemoved {
 			fmt.Println(string(a.t.Escape.Green) + "Task Deleted" + string(a.t.Escape.Reset))
 		} else {

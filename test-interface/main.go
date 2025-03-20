@@ -1,19 +1,61 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/aidarkhanov/nanoid"
 	ki "todo.com/keypressinterface"
 )
 
-// "work on project", "exercise", "read", "write", "walk the dog", "call family", "meditate", "pay bills", "clean the house", "check emails", "water plants", "car maintenance", "home repairs"
-func main() {
-	tasks := []string{"grocery shopping", "meal prepping", "laundry", "work on project", "exercise", "read", "write", "walk the dog", "pay bills", "home repairs"}
+type task struct {
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Completed bool   `json:"completed"`
+}
 
-	menu, err := ki.NewMatrixMenu(tasks, 9, int(os.Stdin.Fd()))
+func (t *task) String() string {
+	var completed string
+	if !t.Completed {
+		completed = "❌"
+	} else {
+		completed = "✅"
+	}
+	return fmt.Sprintf("%s %s", t.Name, completed)
+}
+func newTask(name string, completed bool) *task {
+	var taskId string
+	taskId, err := nanoid.Generate(nanoid.DefaultAlphabet, 20)
+	if err != nil {
+		log.Fatal(err)
+	}
+	t := &task{Id: taskId, Name: name, Completed: completed}
+	return t
+}
+
+func main() {
+	tasks := []*task{
+		newTask("grocery shopping", false),
+		newTask("email justin", false),
+		newTask("meal prepping", false),
+		newTask("laundry", false),
+		newTask("work on project", false),
+		newTask("exercise", false),
+		newTask("read", false),
+		newTask("write", false),
+		newTask("walk the dog", false),
+		newTask("pay bills", false),
+		newTask("home repairs", false),
+	}
+
+	menu, err := ki.NewMatrixMenu(tasks, int(os.Stdin.Fd()))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	menu.RenderInterface()
+	selection, err := menu.RenderInterface()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	fmt.Println(selection)
 }
