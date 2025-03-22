@@ -118,12 +118,15 @@ func removeTask(a *app, taskId string) bool {
 		return false
 	}
 	delete(a.Tasks, taskId)
-	for idx, id := range a.InsertionOrder {
+	//remove deleted id from insertion order
+	filteredInsertionOrder := []string{}
+	for _, id := range a.InsertionOrder {
 		if id == taskId {
-			a.InsertionOrder[idx] = ""
-			break
+			continue
 		}
+		filteredInsertionOrder = append(filteredInsertionOrder, id)
 	}
+	a.InsertionOrder = filteredInsertionOrder
 	saveToFile(a)
 	return true
 }
@@ -160,10 +163,11 @@ func handleOption(a *app, options []string, selected int) {
 	case UPDATE_TASK:
 		// TODO: figure out update logic
 		items := []*task{}
-		fmt.Println(a.InsertionOrder)
 		for _, item := range a.InsertionOrder {
-			taskItem := a.Tasks[item]
-			items = append(items, taskItem)
+			taskItem, ok := a.Tasks[item]
+			if ok {
+				items = append(items, taskItem)
+			}
 		}
 		m, err := ki.NewMatrixMenu(items, int(os.Stdin.Fd()))
 		if err != nil {

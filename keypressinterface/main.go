@@ -86,6 +86,7 @@ func generateMatrix(cols int, items []string) ([][]string, error) {
 }
 func NewMatrixMenu[T fmt.Stringer](items []T, fd int) (*MatrixMenu[T], error) {
 	stringItems := []string{}
+	fmt.Println(items)
 	for _, item := range items {
 		stringItems = append(stringItems, item.String())
 	}

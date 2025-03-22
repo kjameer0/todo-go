@@ -58,4 +58,5 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	fmt.Println(selection)
+	fmt.Println("\033[2J")
 }
