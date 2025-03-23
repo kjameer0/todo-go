@@ -61,6 +61,9 @@ func newApp() *app {
 }
 
 func newTask(name string, completed bool) *task {
+	if name == "" {
+		log.Fatal("a task must have a name")
+	}
 	var taskId string
 	taskId, err := nanoid.Generate(nanoid.DefaultAlphabet, 20)
 	if err != nil {
