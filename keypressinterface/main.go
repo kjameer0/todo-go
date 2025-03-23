@@ -153,24 +153,24 @@ func (m *MatrixMenu[T]) RenderInterface() (T, error) {
 			return zeroValue, errors.New("interrupt triggered")
 		}
 		clearLines(len(m.matrixData))
-		if userInput == up {
+		if userInput == up || userInput[0] == []byte("w")[0] {
 			nextCursorPos := curMatrixRow - 1
 			if nextCursorPos < 0 {
 				nextCursorPos = len(m.matrixData) - 1
 			}
 			m.cursorPos[0] = nextCursorPos
-		} else if userInput == down {
+		} else if userInput == down || userInput[0] == []byte("s")[0] {
 			nextCursorPos := curMatrixRow
 			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData)
 			if curMatrixCol >= len(m.matrixData[nextCursorPos]) {
 				m.cursorPos[1] = len(m.matrixData[nextCursorPos]) - 1
 			}
 			m.cursorPos[0] = nextCursorPos
-		} else if userInput == right {
+		} else if userInput == right || userInput[0] == []byte("d")[0] {
 			nextCursorPos := curMatrixCol
 			nextCursorPos = (nextCursorPos + 1) % len(m.matrixData[curMatrixRow])
 			m.cursorPos[1] = nextCursorPos
-		} else if userInput == left {
+		} else if userInput == left || userInput[0] == []byte("a")[0] {
 			nextCursorPos := curMatrixCol - 1
 			if nextCursorPos < 0 {
 				nextCursorPos = len(m.matrixData[curMatrixRow]) - 1

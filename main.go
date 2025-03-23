@@ -14,8 +14,8 @@ import (
 	"golang.org/x/term"
 )
 
-// TODO: do not allow empty tasks to be added
-
+// TODO: allow wasd to control the interface
+// TODO: make
 const up = "\033[A"
 const down = "\033[B"
 const left = "\033[D"
@@ -164,7 +164,6 @@ func handleOption(a *app, options []string, selected int) {
 	case CHECK_TASKS:
 		listTasks(a)
 	case UPDATE_TASK:
-		// TODO: figure out update logic
 		items := []*task{}
 		for _, item := range a.InsertionOrder {
 			taskItem, ok := a.Tasks[item]
@@ -259,12 +258,12 @@ func main() {
 		}
 		clearLines(len(options))
 
-		if (userInput) == up {
+		if (userInput) == up || userInput[0] == []byte("w")[0] {
 			selected = (selected - 1)
 			if selected == -1 {
 				selected = len(options) - 1
 			}
-		} else if userInput == down {
+		} else if userInput == down || userInput[0] == []byte("s")[0] {
 			selected = (selected + 1) % len(options)
 		} else if buf[0] == enter {
 			handleOption(a, options, selected)
