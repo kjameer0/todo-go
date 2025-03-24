@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -118,6 +119,9 @@ func readTasksFromFile(a *app) {
 	data, err := os.ReadFile(a.saveLocation)
 	s := saveData{}
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return
+		}
 		log.Fatal("failed to read from save location", err)
 	}
 	json.Unmarshal(data, &s)
@@ -183,14 +187,14 @@ func handleOption(a *app, options []string, selected int) {
 
 	switch chosenOption {
 	case CHECK_TASKS:
-		if len(a.Tasks) == 0{
+		if len(a.Tasks) == 0 {
 			fmt.Println("No tasks currently")
-		}else {
+		} else {
 			fmt.Println("Tasks:")
 			listTasks(a)
 		}
 	case UPDATE_TASK:
-		if len(a.Tasks) == 0{
+		if len(a.Tasks) == 0 {
 			fmt.Println("No tasks to update")
 			break
 		}
@@ -219,7 +223,7 @@ func handleOption(a *app, options []string, selected int) {
 		addTask(a, userTask)
 		fmt.Println(string(a.t.Escape.Green) + "Task Added" + string(a.t.Escape.Reset))
 	case DELETE_A_TASK:
-		if len(a.Tasks) == 0{
+		if len(a.Tasks) == 0 {
 			fmt.Println("No tasks to delete")
 			break
 		}
@@ -240,7 +244,7 @@ func handleOption(a *app, options []string, selected int) {
 			fmt.Println(string(a.t.Escape.Yellow) + "No task matching the provided id" + string(a.t.Escape.Reset))
 		}
 	case DELETE_ALL_TASKS:
-		if len(a.Tasks) == 0{
+		if len(a.Tasks) == 0 {
 			fmt.Println("No tasks to delete")
 			break
 		}
