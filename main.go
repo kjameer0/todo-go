@@ -26,6 +26,7 @@ const UPDATE_TASK = "Update tasks"
 const ADD_A_TASK = "Add a task"
 const DELETE_A_TASK = "Delete a Task"
 const QUIT = "Quit"
+var options = []string{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, QUIT}
 
 type task struct {
 	Id        string `json:"id"`
@@ -225,7 +226,6 @@ func main() {
 	readTasksFromFile(a)
 	fmt.Println("Welcome to Task Checker, what up?")
 
-	options := []string{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, QUIT}
 	selected := 0
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
