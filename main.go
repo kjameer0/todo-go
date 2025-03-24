@@ -14,6 +14,12 @@ import (
 	"golang.org/x/term"
 )
 
+type stringWrapper string
+
+func (s stringWrapper) String() string {
+	return string(s)
+}
+
 // TODO: allow wasd to control the interface
 // TODO: make
 const up = "\033[A"
@@ -24,9 +30,11 @@ const enter = 13
 const CHECK_TASKS = "Check tasks"
 const UPDATE_TASK = "Update tasks"
 const ADD_A_TASK = "Add a task"
-const DELETE_A_TASK = "Delete a Task"
+const DELETE_A_TASK = "Delete a specific task"
+const DELETE_ALL_TASKS = "Delete -all- tasks"
 const QUIT = "Quit"
-var options = []string{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, QUIT}
+
+var options = []string{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, DELETE_ALL_TASKS, QUIT}
 
 type task struct {
 	Id        string `json:"id"`
@@ -83,6 +91,17 @@ func exitCleanup(a *app) {
 	os.Exit(0)
 }
 
+func (a *app) listInsertionOrder() []*task {
+	items := []*task{}
+	for _, item := range a.InsertionOrder {
+		taskItem, ok := a.Tasks[item]
+		if ok {
+			items = append(items, taskItem)
+		}
+	}
+	return items
+}
+
 func saveToFile(a *app) {
 	s := saveData{}
 	s.Tasks = a.Tasks
@@ -134,9 +153,12 @@ func removeTask(a *app, taskId string) bool {
 	saveToFile(a)
 	return true
 }
+func removeAllTasks(a *app) {
+	clear(a.InsertionOrder)
+	clear(a.Tasks)
+	saveToFile(a)
+}
 func listTasks(a *app) {
-	fmt.Println("Tasks:")
-
 	for _, taskId := range a.InsertionOrder {
 		if taskId == "" {
 			continue
@@ -163,16 +185,19 @@ func handleOption(a *app, options []string, selected int) {
 
 	switch chosenOption {
 	case CHECK_TASKS:
-		listTasks(a)
-	case UPDATE_TASK:
-		items := []*task{}
-		for _, item := range a.InsertionOrder {
-			taskItem, ok := a.Tasks[item]
-			if ok {
-				items = append(items, taskItem)
-			}
+		if len(a.Tasks) == 0{
+			fmt.Println("No tasks currently")
+		}else {
+			fmt.Println("Tasks:")
+			listTasks(a)
 		}
-		m, err := ki.NewMatrixMenu(items, int(os.Stdin.Fd()))
+	case UPDATE_TASK:
+		if len(a.Tasks) == 0{
+			fmt.Println("No tasks to update")
+			break
+		}
+		taskItems := a.listInsertionOrder()
+		m, err := ki.NewMatrixMenu(taskItems, int(os.Stdin.Fd()))
 		if err != nil {
 			log.Fatal("failed to generate menu")
 		}
@@ -196,10 +221,11 @@ func handleOption(a *app, options []string, selected int) {
 		addTask(a, userTask)
 		fmt.Println(string(a.t.Escape.Green) + "Task Added" + string(a.t.Escape.Reset))
 	case DELETE_A_TASK:
-		items := []*task{}
-		for _, item := range a.Tasks {
-			items = append(items, item)
+		if len(a.Tasks) == 0{
+			fmt.Println("No tasks to delete")
+			break
 		}
+		items := a.listInsertionOrder()
 		fmt.Print("Choose task to delete: \n")
 		menu, err := ki.NewMatrixMenu(items, int(os.Stdin.Fd()))
 		if err != nil {
@@ -214,6 +240,32 @@ func handleOption(a *app, options []string, selected int) {
 			fmt.Println(string(a.t.Escape.Green) + "Task Deleted" + string(a.t.Escape.Reset))
 		} else {
 			fmt.Println(string(a.t.Escape.Yellow) + "No task matching the provided id" + string(a.t.Escape.Reset))
+		}
+	case DELETE_ALL_TASKS:
+		if len(a.Tasks) == 0{
+			fmt.Println("No tasks to delete")
+			break
+		}
+		y := "yes"
+		n := "no"
+		yOrN := []stringWrapper{stringWrapper(y), stringWrapper(n)}
+
+		m, err := ki.NewMatrixMenu(yOrN, int(os.Stdin.Fd()))
+		if err != nil {
+			log.Fatal("failure to create menu for yes or no selection")
+		}
+
+		fmt.Println("Are you aure you want to delete all of your tasks?:")
+		selection, err := m.RenderInterface()
+		if err != nil {
+			log.Fatal("failed to select yes or no")
+		}
+
+		if string(selection) == y {
+			removeAllTasks(a)
+			fmt.Println(string(a.t.Escape.Green) + "All Tasks Deleted" + string(a.t.Escape.Reset))
+		} else if string(selection) == n {
+			fmt.Println(string(a.t.Escape.Yellow) + "Deletion cancelled" + string(a.t.Escape.Reset))
 		}
 	case QUIT:
 		exitCleanup(a)
