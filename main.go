@@ -20,8 +20,6 @@ func (s stringWrapper) String() string {
 	return string(s)
 }
 
-// TODO: allow wasd to control the interface
-// TODO: make
 const up = "\033[A"
 const down = "\033[B"
 const left = "\033[D"
@@ -170,7 +168,7 @@ func listTasks(a *app) {
 		} else {
 			completed = "✅"
 		}
-		fmt.Printf("\t%s %s id: %s\n", curTask.Name, completed, curTask.Id)
+		fmt.Printf("\t%s %s\n", curTask.Name, completed)
 	}
 }
 func updateTask(a *app, t *task) {
