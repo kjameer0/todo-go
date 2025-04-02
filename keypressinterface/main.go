@@ -8,7 +8,6 @@ import (
 	"golang.org/x/term"
 )
 
-// i need the ability to have pressing enter on an entry return the underlying data(not the string version) to the user
 type StringerSignaler[T any] interface {
 	String() string
 	Signal() T
@@ -56,13 +55,6 @@ func generateRows(items []string, windowWidth int) [][]string {
 	}
 	return m
 }
-
-// TODO write a function to generate lines of 80 char width
-// a task can be length l < 80 or l >= 80
-//write a function that
-// func (m *MatrixMenu) generateMatrix(n int) [][]int {
-
-// }
 
 func generateMatrix(cols int, items []string) ([][]string, error) {
 	matrix := make([][]string, 0)

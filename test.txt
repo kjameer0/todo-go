@@ -1,0 +1,145 @@
+
+const list1 = {
+  "0": "ha",
+  "1": "ha",
+  "2": "ha",
+  "3": "ha",
+  "4": "ha",
+  "5": "ha",
+  "6": "ha",
+  "7": "ha",
+  "8": "ha",
+  "9": "ha",
+  "a": "hi",
+  "aa": "ha",
+  "ab": "ha",
+  "b": "hi",
+  "c": "hi",
+  "d": "ha",
+  "e": "ha",
+  "f": "ha",
+  "g": "ha",
+  "h": "ha",
+  "i": "ha",
+  "j": "ha",
+  "k": "ha",
+  "l": "ha",
+  "m": "ha",
+  "n": "ha",
+  "o": "ha",
+  "p": "ha",
+  "q": "ha",
+  "r": "ha",
+  "s": "ha",
+  "t": "ha",
+  "u": "ha",
+  "v": "ha",
+  "w": "ha",
+  "x": "ha",
+  "y": "ha",
+  "z": "ha",
+};
+
+const list2 = {
+  "0": "ha",
+  "1": "ha",
+  "2": "ha",
+  "3": "ha",
+  "4": "ha",
+  "5": "ha",
+  "6": "ha",
+  "7": "ha",
+  "8": "ha",
+  "9": "ha",
+  "a": "hi",
+  "aa": "ha",
+  "b": "hi",
+  "c": "hi",
+  "d": "ha",
+  "e": "ha",
+  "f": "ha",
+  "g": "ha",
+  "h": "ha",
+  "i": "ha",
+  "j": "ha",
+  "k": "ha",
+  "l": "ha",
+  "m": "ha",
+  "n": "ha",
+  "o": "ha",
+  "p": "ha",
+  "q": "ha",
+  "r": "ha",
+  "s": "ha",
+  "t": "ha",
+  "u": "ha",
+  "v": "ha",
+  "w": "ha",
+  "x": "ha",
+  "y": "ha",
+  "z": "ha",
+};
+
+const list1Length = Object.keys(list1).length;
+const list2Length = Object.keys(list2).length;
+console.log(list1Length, list2Length)
+if (list1Length === list2Length) {
+  console.log("The lists have the same length.");
+} else {
+  console.log("The lists have different lengths.");
+}
+https://leetcode.com/problems/two-sum?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/single-number?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/roman-to-integer?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/longest-common-prefix?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/valid-parentheses?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/binary-search?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/unique-number-of-occurrences?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/counter?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/climbing-stairs?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/merge-sorted-array?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/contains-duplicate?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/remove-letter-to-equalize-frequency?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/merge-strings-alternately?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/valid-anagram?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/create-hello-world-function?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/house-robber-iv?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/longest-substring-without-repeating-characters?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/longest-palindromic-substring?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/gas-station?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/add-two-numbers?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/3sum?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/immediate-food-delivery-ii?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/lru-cache?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/swap-nodes-in-pairs?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/design-a-leaderboard?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/min-stack?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/find-minimum-in-rotated-sorted-array?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/search-in-rotated-sorted-array?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/find-peak-element?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/count-unhappy-friends?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/all-paths-from-source-to-target?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/subarray-sum-equals-k?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/dot-product-of-two-sparse-vectors?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/closest-prime-numbers-in-range?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/separate-squares-i?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/number-of-substrings-containing-all-three-characters?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/merge-intervals?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/binary-tree-vertical-order-traversal?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/coin-change?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/two-city-scheduling?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/number-of-islands?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/odd-even-linked-list?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/set-matrix-zeroes?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/subsets?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/word-search?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/sort-integers-by-the-power-value?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/partition-array-according-to-given-pivot?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/check-if-number-is-a-sum-of-powers-of-three?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/valid-triangle-number?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/populating-next-right-pointers-in-each-node?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/insert-delete-getrandom-o1?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/median-of-two-sorted-arrays?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/word-break-ii?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days
+https://leetcode.com/problems/trapping-rain-water?envType=company&envId=bloomberg&favoriteSlug=bloomberg-thirty-days

@@ -25,21 +25,27 @@ func main() {
 	fmt.Println("Enter text (Press Ctrl+D to stop):")
 	fmt.Print("\r")
 	var input []byte
-	buf := make([]byte, 1)
+	buf := make([]byte, 3)
 
 	for {
 		_, err := os.Stdin.Read(buf)
 		if err != nil {
 			break
 		}
-		fmt.Print(string(buf))
+		// fmt.Print(string(buf))
 		// If Ctrl+D is pressed, exit loop
+		// abcd
+		fmt.Println("char", buf, "\r")
 		if buf[0] == 4 {
 			fmt.Println("\r")
 			fmt.Print(ansi.AltBufferOff)
 			break
 		} else if buf[0] == 13 {
-			fmt.Println("\r")
+			fmt.Println("You pressed enter\r")
+		} else if buf[0] == 127 {
+			fmt.Println("bye\r")
+		} else if buf[0] == 27 {
+			fmt.Println("ansi escape", buf, string(buf), string(buf), "\r")
 		}
 		input = append(input, buf[0])
 	}

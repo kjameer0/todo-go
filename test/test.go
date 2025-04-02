@@ -1,60 +1,114 @@
+// package main
+
+// import (
+// 	"encoding/json"
+// 	"fmt"
+
+// 	"github.com/aidarkhanov/nanoid"
+// 	"golang.org/x/term"
+// )
+
+// type app struct {
+// 	tasks                 map[string]*task
+// 	insertionOrder        []string
+// 	originalTerminalState *term.State
+// 	t                     *term.Terminal
+// }
+// type response1 struct {
+// 	Page   int
+// 	Fruits []string
+// }
+// type response2 struct {
+// 	Page   int `json: "page"`
+// 	Fruits int `json: "fruits"`
+// }
+
+// func newApp() *app {
+// 	return &app{}
+// }
+// func newTask(id string, name string) *task {
+// 	t := &task{Id: id, Name: name}
+// 	return t
+// }
+
+// func createTaskMap(a *app, tasks []string) map[string]*task {
+// 	taskMap := make(map[string]*task)
+// 	for _, taskText := range tasks {
+// 		nano, _ := nanoid.Generate(nanoid.DefaultAlphabet, 5)
+// 		taskMap[nano] = newTask(nano, taskText)
+// 		a.insertionOrder = append(a.insertionOrder, nano)
+// 	}
+// 	return taskMap
+// }
+// func main() {
+// 	a := newApp()
+// 	a.tasks = createTaskMap(a, []string{"check phone", "look at phone", "put phone down"})
+// 	// disable input buffering
+// 	bolB, _ := json.Marshal(true)
+// 	fmt.Println(string(bolB))
+// 	intB, _ := json.Marshal(1)
+// 	fmt.Println(string(intB))
+// 	sl := []string{"hi", "there"}
+// 	slJson, _ := json.Marshal(sl)
+// 	fmt.Println(string(slJson))
+// 	taskJson, _ := json.Marshal(a.tasks)
+// 	fmt.Println(string(taskJson))
+// }
+
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 
-	"github.com/aidarkhanov/nanoid"
-	"golang.org/x/term"
+	navmenu "todo.com/nav-menu"
 )
 
 type task struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-}
-type app struct {
-	tasks                 map[string]*task
-	insertionOrder        []string
-	originalTerminalState *term.State
-	t                     *term.Terminal
-}
-type response1 struct {
-	Page   int
-	Fruits []string
-}
-type response2 struct {
-	Page   int `json: "page"`
-	Fruits int `json: "fruits"`
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Completed bool   `json:"completed"`
 }
 
-func newApp() *app {
-	return &app{}
-}
-func newTask(id string, name string) *task {
-	t := &task{Id: id, Name: name}
-	return t
-}
-
-func createTaskMap(a *app, tasks []string) map[string]*task {
-	taskMap := make(map[string]*task)
-	for _, taskText := range tasks {
-		nano, _ := nanoid.Generate(nanoid.DefaultAlphabet, 5)
-		taskMap[nano] = newTask(nano, taskText)
-		a.insertionOrder = append(a.insertionOrder, nano)
+func (t task) String() string {
+	var completed string
+	if !t.Completed {
+		completed = "❌"
+	} else {
+		completed = "✅"
 	}
-	return taskMap
+	return fmt.Sprintf("%s %s", t.Name, completed)
 }
+
 func main() {
-	a := newApp()
-	a.tasks = createTaskMap(a, []string{"check phone", "look at phone", "put phone down"})
-	// disable input buffering
-	bolB, _ := json.Marshal(true)
-	fmt.Println(string(bolB))
-	intB, _ := json.Marshal(1)
-	fmt.Println(string(intB))
-	sl := []string{"hi", "there"}
-	slJson, _ := json.Marshal(sl)
-	fmt.Println(string(slJson))
-	taskJson, _ := json.Marshal(a.tasks)
-	fmt.Println(string(taskJson))
+	// Create a base menu
+	menu := []task{
+		{Id: "1", Name: "Say hi", Completed: false},
+		{Id: "2", Name: "Check emails", Completed: false},
+		{Id: "3", Name: "Write code", Completed: true},
+		{Id: "4", Name: "Review PRs #1", Completed: false},
+		{Id: "5", Name: "Review PRs #2", Completed: false},
+		{Id: "6", Name: "Review PRs #3", Completed: false},
+		{Id: "7", Name: "Review PRs #4", Completed: false},
+		{Id: "8", Name: "Review PRs #5", Completed: false},
+		{Id: "9", Name: "Review PRs #6", Completed: false},
+		{Id: "10", Name: "Review PRs #7", Completed: false},
+		{Id: "11", Name: "Review PRs #8", Completed: false},
+		{Id: "12", Name: "Review PRs #9", Completed: false},
+		{Id: "13", Name: "Review PRs #10", Completed: false},
+		{Id: "14", Name: "Review PRs #11", Completed: false},
+		{Id: "15", Name: "Review PRs #12", Completed: false},
+		{Id: "16", Name: "Review PRs #13", Completed: false},
+		{Id: "17", Name: "Review PRs #14", Completed: false},
+		{Id: "18", Name: "Review PRs #15", Completed: false},
+		{Id: "19", Name: "Review PRs #16", Completed: false},
+		{Id: "20", Name: "Review PRs #17", Completed: false},
+	}
+
+
+	// Call NewMenu with the menu
+	m := navmenu.NewMenu(menu, int(os.Stdin.Fd()))
+	t, _ := m.Render()
+	fmt.Println(t)
+
 }
