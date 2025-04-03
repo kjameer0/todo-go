@@ -59,6 +59,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"os"
 
 	navmenu "todo.com/nav-menu"
@@ -105,10 +107,14 @@ func main() {
 		{Id: "20", Name: "Review PRs #17", Completed: false},
 	}
 
-
 	// Call NewMenu with the menu
 	m := navmenu.NewMenu(menu, int(os.Stdin.Fd()))
-	t, _ := m.Render()
+	t, err := m.Render()
+	if err != nil {
+		if err != io.EOF {
+			log.Fatal("failure in rendering menu: ", err)
+		}
+	}
 	fmt.Println(t)
 
 }

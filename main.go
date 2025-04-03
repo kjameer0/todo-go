@@ -9,7 +9,8 @@ import (
 	"os"
 	"strings"
 
-	ki "todo.com/keypressinterface"
+	"todo.com/ansi"
+	navmenu "todo.com/nav-menu"
 
 	"github.com/aidarkhanov/nanoid"
 	"golang.org/x/term"
@@ -21,19 +22,14 @@ func (s stringWrapper) String() string {
 	return string(s)
 }
 
-const up = "\033[A"
-const down = "\033[B"
-const left = "\033[D"
-const enter = 13
+const CHECK_TASKS stringWrapper = "Check tasks"
+const UPDATE_TASK stringWrapper = "Update tasks"
+const ADD_A_TASK stringWrapper = "Add a task"
+const DELETE_A_TASK stringWrapper = "Delete a specific task"
+const DELETE_ALL_TASKS stringWrapper = "Delete -all- tasks"
+const QUIT stringWrapper = "Quit"
 
-const CHECK_TASKS = "Check tasks"
-const UPDATE_TASK = "Update tasks"
-const ADD_A_TASK = "Add a task"
-const DELETE_A_TASK = "Delete a specific task"
-const DELETE_ALL_TASKS = "Delete -all- tasks"
-const QUIT = "Quit"
-
-var options = []string{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, DELETE_ALL_TASKS, QUIT}
+var options = []stringWrapper{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, DELETE_ALL_TASKS, QUIT}
 
 type task struct {
 	Id        string `json:"id"`
@@ -80,13 +76,13 @@ func newTask(name string, completed bool) *task {
 	t := &task{Id: taskId, Name: name, Completed: completed}
 	return t
 }
+
 func clearLines(nLines int) {
 	for i := 0; i < nLines; i++ {
 		fmt.Print("\033[F\033[K") // Move cursor up and clear line
 	}
 }
 func exitCleanup(a *app) {
-	term.Restore(int(os.Stdin.Fd()), a.originalTerminalState)
 	os.Exit(0)
 }
 
@@ -179,13 +175,10 @@ func updateTask(a *app, t *task) {
 	t.Completed = !t.Completed
 	saveToFile(a)
 }
-func handleOption(a *app, options []string, selected int) {
+func handleOption(a *app, option stringWrapper) {
 	// switch on different options
-	chosenOption := options[selected]
-	term.Restore(int(os.Stdin.Fd()), a.originalTerminalState)
-	defer term.MakeRaw(int(os.Stdin.Fd()))
 
-	switch chosenOption {
+	switch option {
 	case CHECK_TASKS:
 		if len(a.Tasks) == 0 {
 			fmt.Println("No tasks currently")
@@ -199,11 +192,8 @@ func handleOption(a *app, options []string, selected int) {
 			break
 		}
 		taskItems := a.listInsertionOrder()
-		m, err := ki.NewMatrixMenu(taskItems, int(os.Stdin.Fd()))
-		if err != nil {
-			log.Fatal("failed to generate menu")
-		}
-		selection, err := m.RenderInterface()
+		m := navmenu.NewMenu(taskItems, int(os.Stdin.Fd()))
+		selection, err := m.Render()
 		if err != nil {
 			log.Fatal("menu failed in update task")
 		}
@@ -211,17 +201,18 @@ func handleOption(a *app, options []string, selected int) {
 		if err != nil {
 			log.Fatal("failed to render menu for updating tasks")
 		}
-		fmt.Println(string(a.t.Escape.Green) + "Task Updated" + string(a.t.Escape.Reset))
+		fmt.Println(ansi.Green + "Task Updated" + ansi.Reset)
 	case ADD_A_TASK:
 		r := bufio.NewReader(os.Stdin)
 		fmt.Print("Enter task: ")
 		userTask, err := r.ReadString('\n')
+		fmt.Print("\r", ansi.ClearLine+"\n")
 		if err != nil {
 			log.Fatal("Error reading task to add")
 		}
 		userTask = strings.TrimSpace(userTask)
 		addTask(a, userTask)
-		fmt.Println(string(a.t.Escape.Green) + "Task Added" + string(a.t.Escape.Reset))
+		fmt.Println(ansi.Green + "Task Added" + ansi.Reset)
 	case DELETE_A_TASK:
 		if len(a.Tasks) == 0 {
 			fmt.Println("No tasks to delete")
@@ -229,11 +220,8 @@ func handleOption(a *app, options []string, selected int) {
 		}
 		items := a.listInsertionOrder()
 		fmt.Print("Choose task to delete: \n")
-		menu, err := ki.NewMatrixMenu(items, int(os.Stdin.Fd()))
-		if err != nil {
-			log.Fatal("failed to create delete menu")
-		}
-		selection, err := menu.RenderInterface()
+		m := navmenu.NewMenu(items, int(os.Stdin.Fd()))
+		selection, err := m.Render()
 		if err != nil {
 			log.Fatal("failed to delete")
 		}
@@ -252,22 +240,19 @@ func handleOption(a *app, options []string, selected int) {
 		n := "no"
 		yOrN := []stringWrapper{stringWrapper(y), stringWrapper(n)}
 
-		m, err := ki.NewMatrixMenu(yOrN, int(os.Stdin.Fd()))
-		if err != nil {
-			log.Fatal("failure to create menu for yes or no selection")
-		}
+		m := navmenu.NewMenu(yOrN, int(os.Stdin.Fd()))
 
-		fmt.Println("Are you aure you want to delete all of your tasks?:")
-		selection, err := m.RenderInterface()
+		fmt.Println("Are you sure you want to delete all of your tasks?:")
+		selection, err := m.Render()
 		if err != nil {
 			log.Fatal("failed to select yes or no")
 		}
 
 		if string(selection) == y {
 			removeAllTasks(a)
-			fmt.Println(string(a.t.Escape.Green) + "All Tasks Deleted" + string(a.t.Escape.Reset))
+			fmt.Println(ansi.Green + "All Tasks Deleted" + ansi.Reset)
 		} else if string(selection) == n {
-			fmt.Println(string(a.t.Escape.Yellow) + "Deletion cancelled" + string(a.t.Escape.Reset))
+			fmt.Println(ansi.Green + "Deletion cancelled" + ansi.Reset)
 		}
 	case QUIT:
 		exitCleanup(a)
@@ -280,48 +265,13 @@ func main() {
 	readTasksFromFile(a)
 	fmt.Println("Welcome to Task Checker, what up?")
 
-	selected := 0
-
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
-	t := term.NewTerminal(os.Stdin, "")
-	if err != nil {
-		log.Fatal("error in making raw")
-	}
-	a.originalTerminalState = oldState
-	a.t = t
-
-	// read three bytes at once from stdin to capture arrow key presses
-	buf := make([]byte, 3)
-
 	for {
-		for idx, option := range options {
-			arrow := " "
-			if idx == selected {
-				arrow = ">"
-			}
-			fmt.Printf("%v %v\n\r", arrow, option)
-		}
-		_, err = os.Stdin.Read(buf)
+		m := navmenu.NewMenu(options, int(os.Stdin.Fd()))
+		option, err := m.Render()
 		if err != nil {
-			log.Fatal("Something went wrong reading input")
+			fmt.Println(err)
+			continue
 		}
-		userInput := string(buf)
-		if buf[0] == 3 {
-			exitCleanup(a)
-		}
-		clearLines(len(options))
-
-		if (userInput) == up || userInput[0] == []byte("w")[0] {
-			selected = (selected - 1)
-			if selected == -1 {
-				selected = len(options) - 1
-			}
-		} else if userInput == down || userInput[0] == []byte("s")[0] {
-			selected = (selected + 1) % len(options)
-		} else if buf[0] == enter {
-			handleOption(a, options, selected)
-		}
-		fmt.Print("\r")
+		handleOption(a, option)
 	}
 }
