@@ -90,21 +90,6 @@ func main() {
 		{Id: "3", Name: "Write code", Completed: true},
 		{Id: "4", Name: "Review PRs #1", Completed: false},
 		{Id: "5", Name: "Review PRs #2", Completed: false},
-		{Id: "6", Name: "Review PRs #3", Completed: false},
-		{Id: "7", Name: "Review PRs #4", Completed: false},
-		{Id: "8", Name: "Review PRs #5", Completed: false},
-		{Id: "9", Name: "Review PRs #6", Completed: false},
-		{Id: "10", Name: "Review PRs #7", Completed: false},
-		{Id: "11", Name: "Review PRs #8", Completed: false},
-		{Id: "12", Name: "Review PRs #9", Completed: false},
-		{Id: "13", Name: "Review PRs #10", Completed: false},
-		{Id: "14", Name: "Review PRs #11", Completed: false},
-		{Id: "15", Name: "Review PRs #12", Completed: false},
-		{Id: "16", Name: "Review PRs #13", Completed: false},
-		{Id: "17", Name: "Review PRs #14", Completed: false},
-		{Id: "18", Name: "Review PRs #15", Completed: false},
-		{Id: "19", Name: "Review PRs #16", Completed: false},
-		{Id: "20", Name: "Review PRs #17", Completed: false},
 	}
 
 	// Call NewMenu with the menu

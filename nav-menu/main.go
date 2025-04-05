@@ -17,6 +17,8 @@ const enter = 13
 const delete = 127
 const escapeChar = 27
 
+var ErrInterrupted = errors.New("interrupted by SIGINT")
+
 // TODO: pressing ctrlD should cancel the operation but return to the current menu
 // TODO:  ctrl C should end the menu
 // NavMenu holds a 2D slice of menu items
@@ -115,14 +117,15 @@ func NewMenu[T fmt.Stringer](items []T, fd int) *NavMenu[T] {
 func (m *NavMenu[T]) Render() (T, error) {
 	var zeroValue T
 	oldState, err := term.MakeRaw(m.fd)
+	//TODO: change to manually adjust individual flags
 	if err != nil {
 		return zeroValue, err
 	}
 	defer term.Restore(m.fd, oldState)
 	m.originalState = oldState
+
 	userInput := []byte{}
 	for {
-		//print the rows containing menu items
 		currentInput := string(userInput)
 		for _, row := range m.menu {
 			rowText := ""
@@ -146,13 +149,11 @@ func (m *NavMenu[T]) Render() (T, error) {
 		if err != nil {
 			return zeroValue, err
 		}
-
 		switch buf[0] {
 		case ctrlC:
-			clearLines(m.numPrintedLines)
-			term.Restore(m.fd, m.originalState)
+			term.Restore(m.fd, oldState)
 			syscall.Kill(os.Getpid(), syscall.SIGINT)
-
+			return zeroValue, ErrInterrupted
 		case ctrlD:
 			clearLines(m.numPrintedLines)
 			return zeroValue, io.EOF
