@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"todo.com/ansi"
 	navmenu "todo.com/nav-menu"
@@ -32,9 +34,10 @@ const QUIT stringWrapper = "Quit"
 var options = []stringWrapper{CHECK_TASKS, UPDATE_TASK, ADD_A_TASK, DELETE_A_TASK, DELETE_ALL_TASKS, QUIT}
 
 type task struct {
-	Id        string `json:"id"`
-	Name      string `json:"name"`
-	Completed bool   `json:"completed"`
+	Id             string    `json:"id"`
+	Name           string    `json:"name"`
+	Completed      bool      `json:"completed"`
+	CompletionDate time.Time `json:"completionDate"`
 }
 
 func (t *task) String() string {
@@ -44,7 +47,7 @@ func (t *task) String() string {
 	} else {
 		completed = "✅"
 	}
-	return fmt.Sprintf("%s %s", t.Name, completed)
+	return fmt.Sprintf("%s %s %s", t.Name, completed, t.CompletionDate.Format(time.RFC3339))
 }
 
 type app struct {
@@ -53,6 +56,8 @@ type app struct {
 	originalTerminalState *term.State
 	t                     *term.Terminal
 	saveLocation          string
+	configPath            string
+	config                *config
 }
 type saveData struct {
 	Tasks          map[string]*task `json:"tasks"`
@@ -162,22 +167,31 @@ func listTasks(a *app) {
 			continue
 		}
 		curTask := a.Tasks[taskId]
+		//show a task if it not complete or if show complete and task
+		if !a.config.ShowComplete && curTask.Completed {
+			continue
+		}
 		var completed string
 		if !curTask.Completed {
 			completed = "❌"
 		} else {
 			completed = "✅"
 		}
-		fmt.Printf("\t%s %s\n", curTask.Name, completed)
+		t := monthDayYear(curTask.CompletionDate)
+		if curTask.CompletionDate.IsZero() {
+			t = ""
+		}
+		fmt.Printf("\t%s %s %s\n", curTask.Name, completed, t)
 	}
 }
 func updateTask(a *app, t *task) {
 	t.Completed = !t.Completed
+	if t.Completed {
+		t.CompletionDate = time.Now()
+	}
 	saveToFile(a)
 }
-func handleOption(a *app, option stringWrapper) {
-	// switch on different options
-
+func handleOption(a *app, option stringWrapper) error {
 	switch option {
 	case CHECK_TASKS:
 		if len(a.Tasks) == 0 {
@@ -208,7 +222,7 @@ func handleOption(a *app, option stringWrapper) {
 		userTask, err := r.ReadString('\n')
 		fmt.Print("\r", ansi.ClearLine+"\n")
 		if err != nil {
-			log.Fatal("Error reading task to add")
+			return err
 		}
 		userTask = strings.TrimSpace(userTask)
 		addTask(a, userTask)
@@ -227,9 +241,9 @@ func handleOption(a *app, option stringWrapper) {
 		}
 		wasRemoved := removeTask(a, selection.Id)
 		if wasRemoved {
-			fmt.Println(string(a.t.Escape.Green) + "Task Deleted" + string(a.t.Escape.Reset))
+			fmt.Println(string(ansi.Green) + "Task Deleted" + string(ansi.Reset))
 		} else {
-			fmt.Println(string(a.t.Escape.Yellow) + "No task matching the provided id" + string(a.t.Escape.Reset))
+			fmt.Println(string(ansi.Yellow) + "No task matching the provided id" + string(ansi.Reset))
 		}
 	case DELETE_ALL_TASKS:
 		if len(a.Tasks) == 0 {
@@ -257,11 +271,18 @@ func handleOption(a *app, option stringWrapper) {
 	case QUIT:
 		exitCleanup(a)
 	}
+	return nil
 }
 
 func main() {
 	a := newApp()
 	a.saveLocation = "./tasks.json"
+	a.configPath = "./config.json"
+	c, err := a.loadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	a.config = c
 	readTasksFromFile(a)
 	fmt.Println("Welcome to Task Checker, what up?")
 
@@ -272,6 +293,12 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
-		handleOption(a, option)
+		err = handleOption(a, option)
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("Cancelled adding a task")
+				continue
+			}
+		}
 	}
 }

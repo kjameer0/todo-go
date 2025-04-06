@@ -19,8 +19,6 @@ const escapeChar = 27
 
 var ErrInterrupted = errors.New("interrupted by SIGINT")
 
-// TODO: pressing ctrlD should cancel the operation but return to the current menu
-// TODO:  ctrl C should end the menu
 // NavMenu holds a 2D slice of menu items
 type NavMenu[T fmt.Stringer] struct {
 	menu            [][]string
@@ -117,7 +115,6 @@ func NewMenu[T fmt.Stringer](items []T, fd int) *NavMenu[T] {
 func (m *NavMenu[T]) Render() (T, error) {
 	var zeroValue T
 	oldState, err := term.MakeRaw(m.fd)
-	//TODO: change to manually adjust individual flags
 	if err != nil {
 		return zeroValue, err
 	}
