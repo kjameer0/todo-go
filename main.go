@@ -16,10 +16,17 @@ import (
 	"golang.org/x/term"
 )
 
-//TODO: allow user to adjust config
-//TODO: create flow to allow user to submit a start date for a task, default today
-//TODO: allow user to set due date for task
-//TODO: allow user to filter by today and not today??
+// TODO: allow user to adjust config
+// TODO: create flow to allow user to submit a start date for a task, default today
+// TODO: allow user to set due date for task
+// TODO: allow user to filter by today and not today??
+type taskDate struct {
+	t time.Time
+}
+
+func (t taskDate) String() string {
+	return monthDayYear(t.t)
+}
 
 type stringWrapper string
 
@@ -41,6 +48,7 @@ type task struct {
 	Name           string    `json:"name"`
 	Completed      bool      `json:"completed"`
 	CompletionDate time.Time `json:"completionDate"`
+	BeginDate      time.Time `json:"beginDate"`
 }
 
 func (t *task) String() string {
@@ -72,7 +80,7 @@ func newApp() *app {
 	return &app{Tasks: tasks}
 }
 
-func newTask(name string, completed bool) *task {
+func newTask(name string, completed bool, beginDate time.Time) *task {
 	if name == "" {
 		log.Fatal("a task must have a name")
 	}
@@ -81,7 +89,7 @@ func newTask(name string, completed bool) *task {
 	if err != nil {
 		log.Fatal(err)
 	}
-	t := &task{Id: taskId, Name: name, Completed: completed}
+	t := &task{Id: taskId, Name: name, Completed: completed, BeginDate: beginDate}
 	return t
 }
 
@@ -106,8 +114,8 @@ func (a *app) listInsertionOrder() []*task {
 }
 
 // task functions
-func addTask(a *app, taskText string) {
-	addedTask := newTask(taskText, false)
+func addTask(a *app, taskText string, beginTime time.Time) {
+	addedTask := newTask(taskText, false, beginTime)
 	a.Tasks[addedTask.Id] = addedTask
 	a.InsertionOrder = append(a.InsertionOrder, addedTask.Id)
 	saveToFile(a)
@@ -142,6 +150,9 @@ func listTasks(a *app) {
 		curTask := a.Tasks[taskId]
 		//show a task if it not complete or if show complete and task
 		if !a.config.ShowComplete && curTask.Completed {
+			continue
+		}
+		if time.Now().Compare(curTask.BeginDate) == -1 {
 			continue
 		}
 		var completed string
@@ -198,7 +209,18 @@ func handleOption(a *app, option stringWrapper) error {
 			return err
 		}
 		userTask = strings.TrimSpace(userTask)
-		addTask(a, userTask)
+		fmt.Print("When do you want this task to appear on your list:\n")
+		dates := []taskDate{}
+		curTime := time.Now()
+		for i := 0; i < 14; i++ {
+			dates = append(dates, taskDate{t: addDayToDate(curTime, i)})
+		}
+		m := navmenu.NewMenu(dates, int(os.Stdin.Fd()))
+		beginDate, err := m.Render()
+		if err != nil {
+			return err
+		}
+		addTask(a, userTask, beginDate.t)
 		fmt.Println(ansi.Green + "Task Added" + ansi.Reset)
 	case DELETE_A_TASK:
 		if len(a.Tasks) == 0 {
