@@ -106,6 +106,7 @@ func NewMenu[T fmt.Stringer](items []T, fd int) *NavMenu[T] {
 	keyLookup := make(map[string]T)
 	for idx, item := range items {
 		keyLookup[keys[idx]] = item
+		//menuItem := fmt.Sprintf("%s %s.%s %s",ansi.Yellow, keys[idx],ansi.Reset, item.String())
 		menuItem := fmt.Sprintf("%s. %s", keys[idx], item.String())
 		menuItems = append(menuItems, menuItem)
 	}
@@ -120,7 +121,6 @@ func (m *NavMenu[T]) Render() (T, error) {
 	}
 	defer term.Restore(m.fd, oldState)
 	m.originalState = oldState
-
 	userInput := []byte{}
 	for {
 		currentInput := string(userInput)
@@ -129,7 +129,7 @@ func (m *NavMenu[T]) Render() (T, error) {
 			for _, entry := range row {
 				//check if the current entry starts with the same chars the user is currently inputting
 				if len(currentInput) > 0 && string(entry[:len(currentInput)]) == currentInput {
-					rowText += string(ansi.Green)
+					rowText += string(ansi.BgGreen)
 				}
 				rowText += entry + ansi.Reset
 			}

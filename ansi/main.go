@@ -54,6 +54,7 @@ const (
 	AltBufferOff = "\033[?1049l"
 
 	Fg256        = "\033[38;5;"
+	Fg256Blue       = "\033[38;5;(57)m"
 	Bg256        = "\033[48;5;"
 	CtrlC = 3
 	CtrlD = 4
