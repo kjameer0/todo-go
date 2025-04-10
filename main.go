@@ -58,7 +58,13 @@ func (t *task) String() string {
 	} else {
 		completed = "✅"
 	}
-	return fmt.Sprintf("%s %s %s", t.Name, completed, t.CompletionDate.Format(time.RFC3339))
+	var completionDate string
+	if t.CompletionDate.IsZero() {
+		completionDate = ""
+	} else {
+		completionDate = monthDayYear(t.CompletionDate)
+	}
+	return fmt.Sprintf("%s %s %s", t.Name, completed, completionDate)
 }
 
 type app struct {
