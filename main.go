@@ -101,11 +101,6 @@ func newTask(name string, completed bool, beginDate time.Time) *task {
 	return t
 }
 
-func clearLines(nLines int) {
-	for i := 0; i < nLines; i++ {
-		fmt.Print("\033[F\033[K") // Move cursor up and clear line
-	}
-}
 func exitCleanup(a *app) {
 	os.Exit(0)
 }
@@ -120,13 +115,6 @@ func (a *app) listInsertionOrder() []*task {
 	}
 	return items
 }
-func makeList(a *app, items []string, l *tview.List) {
-	head := l
-	for i, item := range items {
-		head = head.AddItem(a.Tasks[item].String(), "", rune(i+'a'), nil)
-	}
-	head.AddItem("Exit", "", rune('q'), nil)
-}
 
 func handleOption(a *app, option stringWrapper) error {
 	switch option {
@@ -136,7 +124,15 @@ func handleOption(a *app, option stringWrapper) error {
 			SetBorders(true)
 		word := 0
 		cols, rows := math.Ceil(math.Sqrt(float64(len(a.Tasks)))), math.Ceil(math.Sqrt(float64(len(a.Tasks))))
-		if len(a.Tasks) == 0 {
+		tasks := []*task{}
+		for _, t := range a.InsertionOrder {
+			curTask := a.Tasks[t]
+			if !a.config.ShowComplete && curTask.Completed {
+				continue
+			}
+			tasks = append(tasks, curTask)
+		}
+		if len(tasks) == 0 {
 			table.SetCell(0, 0,
 				tview.NewTableCell("No tasks in list").
 					SetTextColor(tcell.ColorWhite).
@@ -149,8 +145,8 @@ func handleOption(a *app, option stringWrapper) error {
 					color = tcell.ColorYellow
 				}
 				text := ""
-				if word < len(a.Tasks) {
-					text = a.Tasks[a.InsertionOrder[word]].String()
+				if word < len(tasks) {
+					text = tasks[word].String()
 				}
 				table.SetCell(r, c,
 					tview.NewTableCell(text).
@@ -269,7 +265,6 @@ func main() {
 	}
 	a.config = c
 	readTasksFromFile(a)
-	fmt.Println("Welcome to Task Checker, what up?")
 
 	for {
 		var selection string
