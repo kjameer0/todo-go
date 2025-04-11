@@ -29,7 +29,7 @@ func removeTask(a *app, taskId string) bool {
 	return true
 }
 func removeAllTasks(a *app) {
-	clear(a.InsertionOrder)
+	a.InsertionOrder = []string{}
 	clear(a.Tasks)
 	saveToFile(a)
 }

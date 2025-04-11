@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -13,6 +14,8 @@ import (
 	navmenu "todo.com/nav-menu"
 
 	"github.com/aidarkhanov/nanoid"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 	"golang.org/x/term"
 )
 
@@ -117,16 +120,59 @@ func (a *app) listInsertionOrder() []*task {
 	}
 	return items
 }
-
+func makeList(a *app, items []string, l *tview.List) {
+	head := l
+	for i, item := range items {
+		head = head.AddItem(a.Tasks[item].String(), "", rune(i+'a'), nil)
+	}
+	head.AddItem("Exit", "", rune('q'), nil)
+}
 
 func handleOption(a *app, option stringWrapper) error {
 	switch option {
 	case CHECK_TASKS:
+		app := tview.NewApplication()
+		table := tview.NewTable().
+			SetBorders(true)
+		word := 0
+		cols, rows := math.Ceil(math.Sqrt(float64(len(a.Tasks)))), math.Ceil(math.Sqrt(float64(len(a.Tasks))))
 		if len(a.Tasks) == 0 {
-			fmt.Println("No tasks currently")
-		} else {
-			fmt.Println("Tasks:")
-			listTasks(a)
+			table.SetCell(0, 0,
+				tview.NewTableCell("No tasks in list").
+					SetTextColor(tcell.ColorWhite).
+					SetAlign(tview.AlignCenter).SetSelectable(false))
+		}
+		for r := 0; r < int(rows); r++ {
+			for c := 0; c < int(cols); c++ {
+				color := tcell.ColorWhite
+				if c < 1 || r < 1 {
+					color = tcell.ColorYellow
+				}
+				text := ""
+				if word < len(a.Tasks) {
+					text = a.Tasks[a.InsertionOrder[word]].String()
+				}
+				table.SetCell(r, c,
+					tview.NewTableCell(text).
+						SetTextColor(color).
+						SetAlign(tview.AlignCenter))
+				word = (word + 1)
+			}
+		}
+		table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+			if key == tcell.KeyEscape {
+				app.Stop()
+			}
+			if key == tcell.KeyEnter {
+				app.Stop()
+				// table.SetSelectable(true, true)
+			}
+		}).SetSelectedFunc(func(row int, column int) {
+			table.GetCell(row, column).SetTextColor(tcell.ColorRed)
+			table.SetSelectable(false, false)
+		})
+		if err := app.SetRoot(table, true).EnableMouse(true).Run(); err != nil {
+			panic(err)
 		}
 	case UPDATE_TASK:
 		if len(a.Tasks) == 0 {
@@ -226,13 +272,37 @@ func main() {
 	fmt.Println("Welcome to Task Checker, what up?")
 
 	for {
-		m := navmenu.NewMenu(options, int(os.Stdin.Fd()))
-		option, err := m.Render()
-		if err != nil {
-			fmt.Println(err)
-			continue
+		var selection string
+		app := tview.NewApplication()
+		list := tview.NewList().
+			AddItem(string(options[0]), "", 'a', func() {
+				app.Stop()
+				selection = string(options[0])
+			}).
+			AddItem(string(options[1]), "", 'b', func() {
+				app.Stop()
+				selection = string(options[1])
+			}).
+			AddItem(string(options[2]), "", 'c', func() {
+				app.Stop()
+				selection = string(options[2])
+			}).
+			AddItem(string(options[3]), "", 'd', func() {
+				app.Stop()
+				selection = string(options[3])
+			}).
+			AddItem(string(options[4]), "", 'e', func() {
+				app.Stop()
+				selection = string(options[4])
+			}).
+			AddItem("Quit", "", 'q', func() {
+				app.Stop()
+				selection = string(options[5])
+			})
+		if err := app.SetRoot(list, true).EnableMouse(true).Run(); err != nil {
+			panic(err)
 		}
-		err = handleOption(a, option)
+		err = handleOption(a, stringWrapper(selection))
 		if err != nil {
 			if err == io.EOF {
 				fmt.Println("Cancelled adding a task")
