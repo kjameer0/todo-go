@@ -46,7 +46,7 @@ func createLookupKeys(size int) []string {
 	for range size {
 		keys = append(keys, string(curKey))
 		alphabetIdx = (alphabetIdx + 1) % len(alphabet)
-		//if we are on a 9
+		//if we are on a z
 		//roll over everything behind
 		i := len(curKey) - 1
 		for ; i >= 0; i-- {
