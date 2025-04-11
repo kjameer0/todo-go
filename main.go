@@ -274,31 +274,14 @@ func main() {
 	for {
 		var selection string
 		app := tview.NewApplication()
-		list := tview.NewList().
-			AddItem(string(options[0]), "", 'a', func() {
+		list := tview.NewList()
+
+		for i, option := range options {
+			list.AddItem(option.String(), "", rune(i)+'a', func() {
 				app.Stop()
-				selection = string(options[0])
-			}).
-			AddItem(string(options[1]), "", 'b', func() {
-				app.Stop()
-				selection = string(options[1])
-			}).
-			AddItem(string(options[2]), "", 'c', func() {
-				app.Stop()
-				selection = string(options[2])
-			}).
-			AddItem(string(options[3]), "", 'd', func() {
-				app.Stop()
-				selection = string(options[3])
-			}).
-			AddItem(string(options[4]), "", 'e', func() {
-				app.Stop()
-				selection = string(options[4])
-			}).
-			AddItem("Quit", "", 'q', func() {
-				app.Stop()
-				selection = string(options[5])
+				selection = string(option)
 			})
+		}
 		if err := app.SetRoot(list, true).EnableMouse(true).Run(); err != nil {
 			panic(err)
 		}
